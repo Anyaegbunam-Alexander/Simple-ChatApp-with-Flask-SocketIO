@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <div class="container">
+        <div class="card mt-5">
+                <p class="px-3 fw-semibold fs-5">Welcome to the chat! We’re like a big family here. But without the awkward family reunions.”</p>
+            <div class="card-body">
+                <div id="chat" class="d-block">
+                    <div class="card">
+                        <div class="card-body">
+                            <ul id="chat-messages">
+                            </ul>
+                        </div>
+                    </div>
+                    <input type="text" name="" id="message" placeholder="Type message" class="form-control mt-4">
+                </div>
+                <div>
+                    <button type="button" class="btn btn-secondary mt-4" id="leave-btn">Leave</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let ul = document.getElementById("chat-messages");
+        const socket = io({ autoConnect: false });
+        socket.connect();
+
+        socket.on("connect", function (data) {
+            socket.emit("user_join")
+        })
+       
+        socket.on("user_join", function (data) {
+            let li = document.createElement("li");
+            li.appendChild(document.createTextNode(data["username"] + " joined!"));
+            ul.appendChild(li);
+            ul.scrolltop = ul.scrollHeight;
+        })
+
+        document.getElementById("leave-btn").addEventListener("click", function() {
+            socket.emit("user_left");
+            socket.disconnect();
+            window.location.href = '/';
+        })
+        
+        socket.on("user_left", function (data) {
+            let li = document.createElement("li");
+            li.appendChild(document.createTextNode(data["username"] + " left"));
+            ul.appendChild(li);
+            ul.scrolltop = ul.scrollHeight;
+        })
+
+        const messageTag = document.getElementById("message")
+        messageTag.addEventListener("keyup", function(event){
+            if (event.key == "Enter"){
+                let message = messageTag.value;
+                socket.emit("new_message", message);
+                messageTag.value = "";
+    
+            }
+        })
+
+        socket.on("chat", function(data){
+            let li = document.createElement("li");
+            li.appendChild(document.createTextNode(data["username"] + ": " + data["message"]));
+            ul.appendChild(li);
+            ul.scrolltop = ul.scrollHeight; 
+        })
+    </script>
+    
+    {% endblock content %}
